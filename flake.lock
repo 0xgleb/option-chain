@@ -2,10 +2,20 @@
   "nodes": {
     "cachix": {
       "inputs": {
-        "devenv": ["devenv"],
-        "flake-compat": ["devenv"],
-        "git-hooks": ["devenv", "git-hooks"],
-        "nixpkgs": ["devenv", "nixpkgs"]
+        "devenv": [
+          "devenv"
+        ],
+        "flake-compat": [
+          "devenv"
+        ],
+        "git-hooks": [
+          "devenv",
+          "git-hooks"
+        ],
+        "nixpkgs": [
+          "devenv",
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1748883665,
@@ -26,9 +36,13 @@
       "inputs": {
         "cachix": "cachix",
         "flake-compat": "flake-compat",
-        "git-hooks": ["git-hooks"],
+        "git-hooks": [
+          "git-hooks"
+        ],
         "nix": "nix",
-        "nixpkgs": ["nixpkgs"]
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1751477330,
@@ -79,7 +93,11 @@
     },
     "flake-parts": {
       "inputs": {
-        "nixpkgs-lib": ["devenv", "nix", "nixpkgs"]
+        "nixpkgs-lib": [
+          "devenv",
+          "nix",
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1733312601,
@@ -113,11 +131,48 @@
         "type": "github"
       }
     },
+    "flake-utils_2": {
+      "locked": {
+        "lastModified": 1644229661,
+        "narHash": "sha256-1YdnJAsNy69bpcjuoKdOYQX0YxZBiCYZo4Twxerqv7k=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "3cecb5b042f7f209c56ffd8371b2711a290ec797",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "foundry": {
+      "inputs": {
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1761901832,
+        "narHash": "sha256-/01qznpB/Smmy1srjhUz89wM146S6AYMGJeiIcsm0/Q=",
+        "owner": "shazow",
+        "repo": "foundry.nix",
+        "rev": "c2d2e814e79ed9937bd6a6238f5bb206d8048e96",
+        "type": "github"
+      },
+      "original": {
+        "owner": "shazow",
+        "ref": "stable",
+        "repo": "foundry.nix",
+        "type": "github"
+      }
+    },
     "git-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_2",
         "gitignore": "gitignore",
-        "nixpkgs": ["nixpkgs"]
+        "nixpkgs": [
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1762441963,
@@ -135,7 +190,10 @@
     },
     "gitignore": {
       "inputs": {
-        "nixpkgs": ["git-hooks", "nixpkgs"]
+        "nixpkgs": [
+          "git-hooks",
+          "nixpkgs"
+        ]
       },
       "locked": {
         "lastModified": 1709087332,
@@ -153,12 +211,22 @@
     },
     "nix": {
       "inputs": {
-        "flake-compat": ["devenv", "flake-compat"],
+        "flake-compat": [
+          "devenv",
+          "flake-compat"
+        ],
         "flake-parts": "flake-parts",
-        "git-hooks-nix": ["devenv", "git-hooks"],
+        "git-hooks-nix": [
+          "devenv",
+          "git-hooks"
+        ],
         "nixpkgs": "nixpkgs",
-        "nixpkgs-23-11": ["devenv"],
-        "nixpkgs-regression": ["devenv"]
+        "nixpkgs-23-11": [
+          "devenv"
+        ],
+        "nixpkgs-regression": [
+          "devenv"
+        ]
       },
       "locked": {
         "lastModified": 1750955511,
@@ -193,6 +261,20 @@
     },
     "nixpkgs_2": {
       "locked": {
+        "lastModified": 1666753130,
+        "narHash": "sha256-Wff1dGPFSneXJLI2c0kkdWTgxnQ416KE6X4KnFkgPYQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f540aeda6f677354f1e7144ab04352f61aaa0118",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
+    "nixpkgs_3": {
+      "locked": {
         "lastModified": 1762233356,
         "narHash": "sha256-cGS3lLTYusbEP/IJIWGgnkzIl+FA5xDvtiHyjalGr4k=",
         "owner": "NixOS",
@@ -211,27 +293,9 @@
       "inputs": {
         "devenv": "devenv",
         "flake-utils": "flake-utils",
+        "foundry": "foundry",
         "git-hooks": "git-hooks",
-        "nixpkgs": "nixpkgs_2",
-        "rust-overlay": "rust-overlay"
-      }
-    },
-    "rust-overlay": {
-      "inputs": {
-        "nixpkgs": ["nixpkgs"]
-      },
-      "locked": {
-        "lastModified": 1762483116,
-        "narHash": "sha256-Z8EVsTH10BjCdFyPxbUu5jBV+HGL39rh9+beQcnNRm0=",
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "rev": "9de55b59b6aaadbd9dbf223765a835239b767ee5",
-        "type": "github"
-      },
-      "original": {
-        "owner": "oxalica",
-        "repo": "rust-overlay",
-        "type": "github"
+        "nixpkgs": "nixpkgs_3"
       }
     },
     "systems": {
