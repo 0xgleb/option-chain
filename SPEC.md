@@ -443,6 +443,9 @@ sequenceDiagram
 
 ## Architecture
 
+All contracts implemented in Solidity, leveraging OpenZeppelin contracts for
+standard token implementations and security patterns.
+
 ### Two-Token Architecture per Option Series
 
 The system deploys **two separate ERC-20 tokens per option series**:
@@ -533,6 +536,41 @@ isolation prioritizes safety and simplicity.
 - Fair and deterministic
 - Single function call, no coordination needed
 
+### Implementation Details
+
+**Deployment:**
+
+- Factory uses OpenZeppelin Clones (EIP-1167) with CREATE2 for gas-efficient
+  deterministic addresses
+- Series ID: `keccak256(abi.encode(underlying, quote, strike, expiry, isCall))`
+
+**Storage:**
+
+- OptionFactory: `mapping(bytes32 => SeriesContracts)` for series registry
+- OptionToken: Immutable parameters (underlying, quote, strike, expiry, isCall,
+  vault)
+- OptionVault: FIFO tracking via `DepositCheckpoint[]` array with cumulative
+  totals
+
+**Token Decimals:**
+
+- All amounts normalized to 18 decimals for internal calculations
+- Convert to native decimals only for ERC20 transfers
+- Series ID generation uses normalized values for consistency
+
+**Unsafe Tokens:**
+
+- Fee-on-transfer: Check balance before/after, revert on mismatch
+- Rebasing: No protection, document risk
+- Blacklists: No protection, accept risk
+- Overflow: Solidity 0.8+ automatic checks
+
+**Testing:**
+
+- Foundry for unit tests, fuzzing, and gas reports
+- Fork testing against real tokens (USDC, WBTC)
+- Property-based invariant testing
+
 ## Security Considerations
 
 ### Attack Vectors & Mitigations
@@ -580,20 +618,9 @@ isolation prioritizes safety and simplicity.
 
 - Contracts follow checks-effects-interactions pattern
 - Burn option tokens/shares BEFORE external transfers
-- ERC-4626 standard includes reentrancy protection via SafeERC20
-- Vault exercises must update `total_assets` before transfers
-
-**Front-Running:**
-
-- Trading occurs on external venues (DEXs, CLOBs, OTC)
-- Front-running protection depends on the trading venue used
-- Vault deposits/redeems vulnerable to share price manipulation
-
-**Integer Overflow/Underflow:**
-
-- Use checked arithmetic operations
-- Verify all math operations in critical paths
-- ERC-4626 share calculations especially sensitive to overflow
+- Use OpenZeppelin's ReentrancyGuard on sensitive functions
+- ERC-4626 implementation uses SafeERC20 for token transfers
+- Vault exercises must update state before external calls
 
 **Collateral Theft:**
 
