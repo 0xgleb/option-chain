@@ -42,6 +42,12 @@ and liquidation mechanisms.
   price feeds
 - **Simplicity First**: 100% collateralization eliminates complex risk
   management
+- **Options as Collateral**: Options can be written against other option
+  positions for capital efficiency
+  - Enables spread strategies (vertical spreads, etc.)
+  - Recursive exercise: exercising outer option automatically exercises inner
+    option if needed
+  - Collateral constraints ensure risk is always covered
 - **FIFO Individual Assignment**: Writers assigned in deposit order (first
   deposits assigned first)
   - Cumulative checkpoints enable efficient binary search for cutoff
@@ -87,6 +93,47 @@ writers are always fully protected regardless of when exercise occurs.
   token
 - No oracle required (holder decides if exercise is profitable)
 
+---
+
+**Options as Collateral**: Options can be used as collateral to write other
+options, enabling capital-efficient spread strategies.
+
+**Collateral Constraints:**
+
+For a call option to be used as collateral for another call:
+
+- Same underlying and quote tokens
+- Collateral option strike <= written option strike (inner is more ITM)
+- Collateral option expiry >= written option expiry (inner expires later)
+- Collateral option quantity >= written option quantity
+
+For a put option to be used as collateral for another put:
+
+- Same underlying and quote tokens
+- Collateral option strike >= written option strike (inner is more ITM)
+- Collateral option expiry >= written option expiry (inner expires later)
+- Collateral option quantity >= written option quantity
+
+**Recursive Exercise:**
+
+When an option backed by another option is exercised:
+
+1. Holder exercises outer option (e.g., call at strike $65k)
+2. Vault checks collateral - finds it's backed by inner option (e.g., call at
+   strike $60k)
+3. Vault automatically exercises inner option to obtain underlying tokens
+4. Vault delivers underlying tokens to outer option holder
+5. This recurses until reaching actual token collateral
+
+Example: Call spread (long $60k call, short $65k call)
+
+- Writer owns $60k call, uses it as collateral to write $65k call
+- When $65k call is exercised:
+  - Vault exercises the $60k call collateral
+  - $60k call returns underlying tokens
+  - Vault delivers underlying to $65k call holder
+- Net result: Writer's max loss is capped at strike difference ($5k per option)
+
 ## User Flows
 
 #### Flow 1: Writing (Selling) an Option
@@ -108,10 +155,16 @@ Steps:
 5. Writer can now sell option tokens on any DEX or trading venue, or hold them
 6. Writer retains vault shares representing claim on collateral
 
-Collateral:
+Collateral (one of):
 
-- Calls: Underlying ERC20 tokens (1:1 ratio) deposited to underlying vault
-- Puts: Quote ERC20 tokens (strike \* quantity) deposited to quote vault
+- **Token collateral:**
+  - Calls: Underlying ERC20 tokens (1:1 ratio)
+  - Puts: Quote ERC20 tokens (strike * quantity)
+- **Option collateral:**
+  - Calls: Call option tokens with same underlying/quote, strike <=, expiry >=,
+    quantity >=
+  - Puts: Put option tokens with same underlying/quote, strike >=, expiry >=,
+    quantity >=
 
 Outcome:
 
@@ -549,8 +602,12 @@ isolation prioritizes safety and simplicity.
 - OptionFactory: `mapping(bytes32 => SeriesContracts)` for series registry
 - OptionToken: Immutable parameters (underlying, quote, strike, expiry, isCall,
   vault)
-- OptionVault: FIFO tracking via `DepositCheckpoint[]` array with cumulative
-  totals
+- OptionVault:
+  - FIFO tracking via `DepositCheckpoint[]` array with cumulative totals
+  - Each checkpoint tracks collateral type: `address collateralToken` (ERC20
+    address or option token address)
+  - Recursive exercise: If `collateralToken` is an option, exercise it to obtain
+    underlying tokens
 
 **Token Decimals:**
 
@@ -646,11 +703,27 @@ isolation prioritizes safety and simplicity.
 - **Mitigation:** Track `options_outstanding` in vault, prevent share redemption
   that would leave insufficient collateral for outstanding options
 
+**Option Collateral Validation:**
+
+- Must verify collateral option satisfies constraints at write time
+- **Calls:** collateral strike <= written strike, expiry >=, quantity >=
+- **Puts:** collateral strike >= written strike, expiry >=, quantity >=
+- **Mitigation:** Factory validates constraints before allowing vault deposit,
+  reverts on invalid collateral
+
+**Recursive Exercise Depth:**
+
+- Deeply nested option chains could cause high gas costs or stack overflow
+- **Mitigation:** Limit recursion depth (e.g., max 10 levels) or use iterative
+  approach
+- Practical limit: Gas costs make deep nesting uneconomical
+
 ### Known Limitations & Risks
 
 **Collateral Lock Risk:**
 
 - 100% collateralization means lower capital efficiency vs cash-settled options
+- Option-as-collateral feature improves capital efficiency for spreads
 - Writers' collateral locked in vaults until expiry or early redemption
 - Writers can exit early via:
   1. Burn shares + options together (if still hold both)
@@ -693,3 +766,31 @@ isolation prioritizes safety and simplicity.
 - Not suitable for standard DeFi yield strategies
 - Documentation must clearly explain vault shares != typical yield-bearing
   tokens
+
+## Spread Strategies with Option Collateral
+
+The option-as-collateral feature enables capital-efficient spread strategies:
+
+**Vertical Call Spread:**
+
+- Buy call at strike K1, sell call at strike K2 where K2 > K1
+- Use K1 call as collateral for writing K2 call
+- Capital efficiency: Only lock up K1 call, not underlying tokens
+- Max loss: (K2 - K1) if both exercised
+- Example: Long $60k call, short $65k call -> max loss $5k per BTC
+
+**Vertical Put Spread:**
+
+- Buy put at strike K1, sell put at strike K2 where K1 > K2
+- Use K1 put as collateral for writing K2 put
+- Capital efficiency: Only lock up K1 put, not quote tokens
+- Max loss: (K1 - K2) if both exercised
+- Example: Long $60k put, short $55k put -> max loss $5k per BTC
+
+**Calendar Spread:**
+
+- Buy option expiring at T2, sell option at same strike expiring at T1 where T2
+  > T1
+- Use T2 option as collateral for writing T1 option
+- Capital efficiency: Reuse same long option for multiple short rolls
+- Example: Long Dec call, short Nov call, then write Dec call after Nov expires
